@@ -44,6 +44,39 @@
         .modal { opacity: 0; pointer-events: none; transform: scale(0.95); transition: 0.2s ease-in-out; }
         .modal.active { opacity: 1; pointer-events: auto; transform: scale(1); }
         
+        /* Toast Notification */
+        #toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast {
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: 0.3s ease;
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+            justify-content: center;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.error { background: #E11D48; }
+        .toast.success { background: #10B981; }
+
         /* HIDDEN TICKET FOR PDF GENERATION (Optimized for PDF) */
         #printableTicket { 
             font-family: 'Helvetica', sans-serif; 
@@ -56,6 +89,8 @@
     </style>
 </head>
 <body class="bg-light text-slate-800 dark:bg-dark dark:text-white min-h-screen relative overflow-x-hidden">
+
+    <div id="toast-container"></div>
 
     <nav class="fixed w-full z-50 glass shadow-sm transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -142,9 +177,21 @@
 
     <div id="infoModal" class="modal fixed inset-0 z-[70] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-        <div class="relative bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl border border-gray-200 dark:border-slate-700">
-            <h3 class="text-2xl font-bold mb-6 text-center">Passenger Details</h3>
+        <div class="relative bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl border border-gray-200 dark:border-slate-700 overflow-y-auto max-h-[90vh]">
+            <h3 class="text-2xl font-bold mb-6 text-center">Journey Details</h3>
             <div class="space-y-4">
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase">Booking Date <span class="text-red-500">*</span></label>
+                    <input type="date" id="b_date" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 outline-none">
+                </div>
+                
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-bold text-gray-500 uppercase">Duration (Days) - Optional</label>
+                    <input type="number" id="b_days" placeholder="e.g. 2" min="1" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 outline-none">
+                </div>
+
+                <div class="border-t border-gray-200 dark:border-gray-700 my-4"></div>
+
                 <input type="text" id="p_name" placeholder="Full Name" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 outline-none">
                 <input type="number" id="p_phone" placeholder="Mobile Number" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 outline-none">
                 <input type="email" id="p_email" placeholder="Email Address (For Ticket)" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 outline-none">
@@ -155,7 +202,9 @@
             </div>
             <div class="flex gap-3 mt-6">
                 <button onclick="closeModal('infoModal')" class="flex-1 py-3 rounded-lg border border-gray-300 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700 transition">Cancel</button>
-                <button onclick="openPaymentModal()" class="flex-1 py-3 rounded-lg bg-primary text-white font-bold hover:bg-red-700 transition">Next</button>
+                <button onclick="checkAvailabilityAndProceed()" class="flex-1 py-3 rounded-lg bg-primary text-white font-bold hover:bg-red-700 transition flex justify-center items-center">
+                    <span id="btnText">Next</span> <i id="btnLoad" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -218,6 +267,7 @@
                 <tr style="background: #f9fafb;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Passenger Name</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_name"></td></tr>
                 <tr><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Route</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;"><span id="pdf_from"></span> ➝ <span id="pdf_to"></span></td></tr>
                 <tr style="background: #f9fafb;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Vehicle</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_veh"></td></tr>
+                <tr style="background: #fff;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Date & Duration</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_date"></td></tr>
                 <tr><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Payment Method</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_pay"></td></tr>
                 <tr style="background: #fff0f5;"><td style="padding:15px; font-weight:bold; color:#E11D48;">Total Amount</td><td style="padding:15px; font-weight:bold; color:#E11D48; font-size: 22px; text-align:right;" id="pdf_cost"></td></tr>
             </table>
@@ -257,6 +307,29 @@
 
         let selectedRate = 15, selectedVehicle = 'Premium AC', totalDistance = 0, totalPrice = 0, bookingDetails = {};
 
+        // Set Date Input Min Value to Today
+        window.addEventListener('load', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('b_date').setAttribute('min', today);
+        });
+
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 100);
+
+            // Remove after 4 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
         function toggleTheme() { document.documentElement.classList.toggle('dark'); }
         function toggleProfile() { document.getElementById('profileModal').classList.toggle('active'); }
         function openModal(id) { document.getElementById(id).classList.add('active'); }
@@ -273,22 +346,22 @@
         async function calculateDistance() {
             const f = document.getElementById('from').value;
             const t = document.getElementById('to').value;
-            if(!f || !t) return alert("Please enter both cities.");
+            if(!f || !t) return showToast("Please enter both cities.");
             try {
                 const r1 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${f}`);
                 const d1 = await r1.json();
                 const r2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${t}`);
                 const d2 = await r2.json();
-                if(!d1.length || !d2.length) return alert("City not found.");
+                if(!d1.length || !d2.length) return showToast("City not found.");
                 
                 const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${d1[0].lon},${d1[0].lat};${d2[0].lon},${d2[0].lat}?overview=false`);
                 const rd = await route.json();
-                if(rd.code !== 'Ok') return alert("Route not found.");
+                if(rd.code !== 'Ok') return showToast("Route not found.");
                 
                 totalDistance = (rd.routes[0].distance / 1000).toFixed(1);
                 calculateTotal();
                 document.getElementById('resultArea').classList.remove('hidden');
-            } catch (e) { alert("Error calculating distance. Please check internet."); }
+            } catch (e) { showToast("Error calculating distance."); }
         }
 
         function calculateTotal() {
@@ -307,23 +380,56 @@
 
         function openInfoModal() { openModal('infoModal'); }
 
-        function openPaymentModal() {
+        // NEW: Check Availability function
+        async function checkAvailabilityAndProceed() {
+            const date = document.getElementById('b_date').value;
+            const days = document.getElementById('b_days').value || "1";
             const name = document.getElementById('p_name').value;
             const phone = document.getElementById('p_phone').value;
             const email = document.getElementById('p_email').value;
-            if(!name || !phone || !email) return alert("Please fill all details.");
+
+            if(!date) return showToast("Please select a Booking Date.");
+            if(!name || !phone || !email) return showToast("Please fill all details.");
+
+            const btnText = document.getElementById('btnText');
+            const btnLoad = document.getElementById('btnLoad');
             
-            bookingDetails = {
-                name, phone, email, 
-                pax: document.getElementById('p_pax').value,
-                from: document.getElementById('from').value,
-                to: document.getElementById('to').value,
-                vehicle: selectedVehicle,
-                distance: totalDistance,
-                price: totalPrice
-            };
-            closeModal('infoModal');
-            openModal('payModal');
+            // UI Loading state
+            btnText.innerText = "Checking...";
+            btnLoad.classList.remove('hidden');
+
+            try {
+                // Check Firestore for this specific date
+                const snapshot = await db.collection('rk_bookings')
+                                        .where('journeyDate', '==', date)
+                                        .get();
+
+                if (!snapshot.empty) {
+                    // Alert User - Date is booked
+                    showToast(`Date ${date} is already booked! Please choose another date.`, 'error');
+                } else {
+                    // Proceed to payment
+                    bookingDetails = {
+                        name, phone, email, 
+                        pax: document.getElementById('p_pax').value,
+                        from: document.getElementById('from').value,
+                        to: document.getElementById('to').value,
+                        journeyDate: date,
+                        journeyDays: days,
+                        vehicle: selectedVehicle,
+                        distance: totalDistance,
+                        price: totalPrice
+                    };
+                    closeModal('infoModal');
+                    openModal('payModal');
+                }
+            } catch (error) {
+                console.error(error);
+                showToast("System Check Failed. Check Internet.");
+            } finally {
+                btnText.innerText = "Next";
+                btnLoad.classList.add('hidden');
+            }
         }
 
         function handleOffline() {
@@ -334,7 +440,7 @@
 
         function handleOnline() {
             if(RAZORPAY_KEY === "YOUR_RAZORPAY_KEY_ID") {
-                alert("Online Payment Setup Pending.\nUse Offline Payment to test Email functionality.");
+                showToast("Online Payment Setup Pending. Use Offline.");
                 return;
             }
             var options = {
@@ -351,6 +457,8 @@
 
         function processBooking(method, txn) {
             closeModal('payModal');
+            showToast("Processing Booking...", "success");
+
             const uniqueId = "RK-" + Math.floor(100000 + Math.random() * 900000);
             const finalData = { 
                 ...bookingDetails, 
@@ -358,7 +466,7 @@
                 txnId: txn, 
                 bookingId: uniqueId,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(), 
-                date: new Date().toLocaleString() 
+                createdDate: new Date().toLocaleString() 
             };
 
             db.collection('rk_bookings').add(finalData).then(() => {
@@ -370,6 +478,8 @@
                     from_loc: finalData.from,
                     to_loc: finalData.to,
                     vehicle: finalData.vehicle,
+                    journey_date: finalData.journeyDate,
+                    days: finalData.journeyDays,
                     cost: finalData.price,
                     payment_mode: method,
                     booking_id: uniqueId,
@@ -378,19 +488,19 @@
 
                 emailjs.send(EMAIL_SID, EMAIL_TID, emailParams)
                     .then(() => console.log("Email Sent Successfully"))
-                    .catch((err) => {
-                        console.error("Email Failed:", err);
-                    });
+                    .catch((err) => console.error("Email Failed:", err));
 
                 showTicket(finalData);
-            }).catch(e => alert("Database Error: " + e.message));
+                showToast("Booking Successful!", "success");
+            }).catch(e => showToast("Database Error: " + e.message));
         }
 
         function showTicket(data) {
             // Screen Ticket
             document.getElementById('disp_ticket_id').innerText = data.bookingId;
             document.getElementById('ticket-body-content').innerHTML = `
-                <div class="flex justify-between border-b pb-2"><span>From</span><b>${data.from}</b></div>
+                <div class="flex justify-between border-b pb-2"><span>Date</span><b>${data.journeyDate}</b></div>
+                <div class="flex justify-between border-b py-2"><span>From</span><b>${data.from}</b></div>
                 <div class="flex justify-between border-b py-2"><span>To</span><b>${data.to}</b></div>
                 <div class="flex justify-between border-b py-2"><span>Vehicle</span><b>${data.vehicle}</b></div>
                 <div class="flex justify-between border-b py-2"><span>Amount</span><b class="text-primary">₹${data.price}</b></div>
@@ -403,6 +513,7 @@
             document.getElementById('pdf_from').innerText = data.from;
             document.getElementById('pdf_to').innerText = data.to;
             document.getElementById('pdf_veh').innerText = data.vehicle;
+            document.getElementById('pdf_date').innerText = `${data.journeyDate} (${data.journeyDays} Days)`;
             document.getElementById('pdf_pay').innerText = data.payment;
             document.getElementById('pdf_cost').innerText = "₹" + data.price;
 
