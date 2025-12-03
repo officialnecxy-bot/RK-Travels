@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RK TRAVELS | Premium Journey</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: { primary: '#E11D48', dark: '#0f172a', light: '#f8fafc' }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { transition: background-color 0.3s, color 0.3s; }
+        
+        /* Logo Logic */
+        .logo-img { transition: filter 0.3s; height: 50px; object-fit: contain; filter: brightness(0); }
+        .dark .logo-img { filter: brightness(0) invert(1); } 
+        
+        /* Glassmorphism */
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
+        .dark .glass { background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); }
+        
+        /* Modal Animation */
+        .modal { opacity: 0; pointer-events: none; transform: scale(0.95); transition: 0.2s ease-in-out; }
+        .modal.active { opacity: 1; pointer-events: auto; transform: scale(1); }
+        
+        /* HIDDEN TICKET FOR PDF GENERATION (Optimized for PDF) */
+        #printableTicket { 
+            font-family: 'Helvetica', sans-serif; 
+            display: none; 
+            width: 700px; /* Fixed width for A4 */
+            background: #ffffff; 
+            color: #000000;
+            padding: 0;
+        }
+    </style>
+</head>
+<body class="bg-light text-slate-800 dark:bg-dark dark:text-white min-h-screen relative overflow-x-hidden">
+
+    <nav class="fixed w-full z-50 glass shadow-sm transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex-shrink-0 flex items-center gap-3">
+                    <img src="https://i.ibb.co/4wN1qHyv/1764759098932.png" alt="RK Travels" class="logo-img">
+                    <div class="flex flex-col justify-center">
+                        <span class="font-extrabold text-2xl tracking-tighter leading-none text-slate-800 dark:text-white">RK <span class="text-primary">TRAVELS</span></span>
+                        <span class="text-[0.6rem] font-bold tracking-[0.3em] text-gray-500 uppercase mt-1">Premium Journey</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700 transition">
+                        <i class="fas fa-moon text-xl dark:hidden"></i><i class="fas fa-sun text-xl hidden dark:block text-yellow-400"></i>
+                    </button>
+                    <button onclick="toggleProfile()" class="h-10 w-10 rounded-full overflow-hidden border-2 border-primary shadow-lg hover:scale-105 transition">
+                        <img src="https://i.ibb.co/qLpP3Zxy/1764687811756.png" class="h-full w-full object-cover">
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="profileModal" class="modal fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="toggleProfile()"></div>
+        <div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center border border-gray-200 dark:border-slate-700">
+            <button onclick="toggleProfile()" class="absolute top-4 right-4 text-gray-500 hover:text-red-500"><i class="fas fa-times text-xl"></i></button>
+            <div class="w-24 h-24 mx-auto rounded-full p-1 border-4 border-primary mb-4"><img src="https://i.ibb.co/qLpP3Zxy/1764687811756.png" class="w-full h-full rounded-full object-cover"></div>
+            <h2 class="text-2xl font-bold">Rushi Kakde</h2>
+            <p class="text-sm text-primary font-semibold tracking-wide mb-1">OWNER, RK TRAVELS</p>
+            <div class="grid grid-cols-2 gap-3 mt-6">
+                <a href="https://wa.me/919607860912" class="bg-green-500 text-white py-2 rounded-lg"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+                <a href="tel:9607860912" class="bg-blue-600 text-white py-2 rounded-lg"><i class="fas fa-phone"></i> Call</a>
+                <a href="https://www.instagram.com/rushi____1007" class="bg-pink-600 text-white py-2 rounded-lg"><i class="fab fa-instagram"></i> Instagram</a>
+                <a href="https://t.me/Rushi7219" class="bg-sky-500 text-white py-2 rounded-lg"><i class="fab fa-telegram"></i> Telegram</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="pt-28 pb-10 px-4">
+        <div class="max-w-3xl mx-auto text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4">Plan Your <span class="text-primary">Next Trip</span></h1>
+            <p class="text-gray-600 dark:text-gray-300">Calculate distance & book instantly.</p>
+        </div>
+
+        <div class="max-w-2xl mx-auto glass rounded-3xl p-6 md:p-10 shadow-xl">
+            <div class="mb-6">
+                <h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i class="fas fa-car text-primary"></i> Select Vehicle</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div onclick="selectVehicle('regular', 13)" id="opt-regular" class="cursor-pointer p-4 rounded-xl border-2 border-transparent bg-gray-50 dark:bg-slate-900 hover:border-gray-300 text-center relative group transition">
+                        <i class="fas fa-car-side text-3xl mb-2 text-gray-500"></i>
+                        <h4 class="font-bold">Regular</h4>
+                        <p class="text-sm text-gray-500">₹13 / km</p>
+                    </div>
+                    <div onclick="selectVehicle('ac', 15)" id="opt-ac" class="cursor-pointer p-4 rounded-xl border-2 border-primary bg-red-50 dark:bg-slate-800 text-center relative transition">
+                        <div class="absolute top-2 right-2 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded">POPULAR</div>
+                        <i class="fas fa-snowflake text-3xl mb-2 text-primary"></i>
+                        <h4 class="font-bold">Premium AC</h4>
+                        <p class="text-sm text-gray-500">₹15 / km</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4 mb-6">
+                <h3 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-route text-primary"></i> Route</h3>
+                <div class="relative"><i class="fas fa-dot-circle absolute left-4 top-4 text-green-500"></i><input type="text" id="from" placeholder="Pickup City" class="w-full pl-10 p-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 outline-none"></div>
+                <div class="relative"><i class="fas fa-map-marker-alt absolute left-4 top-4 text-primary"></i><input type="text" id="to" placeholder="Drop City" class="w-full pl-10 p-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 outline-none"></div>
+            </div>
+
+            <button onclick="calculateDistance()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition mb-6 shadow-lg">
+                <i class="fas fa-calculator mr-2"></i> Calculate Price
+            </button>
+
+            <div id="resultArea" class="hidden p-6 bg-slate-900 text-white rounded-2xl shadow-inner border border-slate-700">
+                <div class="flex justify-between items-center mb-2"><span class="text-gray-400">Total Distance</span><span class="font-bold text-xl" id="displayDist">0 km</span></div>
+                <div class="flex justify-between items-center mb-4"><span class="text-gray-400">Rate applied</span><span class="font-bold text-sm" id="displayRate">₹15/km</span></div>
+                <div id="extraCharge" class="hidden bg-red-600/20 text-red-400 p-2 rounded-lg text-xs mb-4 text-center border border-red-600/30"><i class="fas fa-info-circle"></i> Minimum distance charge (250km) applied: +₹999</div>
+                <div class="border-t border-gray-700 pt-4 flex justify-between items-center"><span class="text-lg font-bold">Total Fare</span><span class="text-3xl font-extrabold text-primary" id="displayPrice">₹0</span></div>
+                
+                <button onclick="openInfoModal()" class="w-full mt-6 bg-primary hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-red-600/30 transition transform active:scale-95">PROCEED TO BOOK <i class="fas fa-arrow-right ml-2"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="infoModal" class="modal fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="relative bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl border border-gray-200 dark:border-slate-700">
+            <h3 class="text-2xl font-bold mb-6 text-center">Passenger Details</h3>
+            <div class="space-y-4">
+                <input type="text" id="p_name" placeholder="Full Name" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 outline-none">
+                <input type="number" id="p_phone" placeholder="Mobile Number" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 outline-none">
+                <input type="email" id="p_email" placeholder="Email Address (For Ticket)" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 outline-none">
+                <div class="flex items-center justify-between bg-gray-50 dark:bg-slate-900 p-3 rounded-lg border border-gray-300 dark:border-slate-600">
+                    <span class="text-gray-500">Passengers</span>
+                    <input type="number" id="p_pax" value="1" min="1" max="6" class="w-16 bg-transparent text-right font-bold outline-none">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeModal('infoModal')" class="flex-1 py-3 rounded-lg border border-gray-300 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700 transition">Cancel</button>
+                <button onclick="openPaymentModal()" class="flex-1 py-3 rounded-lg bg-primary text-white font-bold hover:bg-red-700 transition">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="payModal" class="modal fixed inset-0 z-[80] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="relative bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl border border-gray-200 dark:border-slate-700">
+            <h3 class="text-2xl font-bold mb-2 text-center">Select Payment</h3>
+            <p class="text-center text-gray-500 mb-6 text-sm">Choose how you'd like to pay</p>
+            
+            <div onclick="handleOnline()" class="flex items-center gap-4 p-4 rounded-xl border border-gray-300 dark:border-slate-600 hover:border-blue-500 cursor-pointer transition mb-3 group">
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition"><i class="fas fa-credit-card text-xl"></i></div>
+                <div><h4 class="font-bold">Pay Online</h4><p class="text-xs text-gray-500">Cards, UPI (Razorpay)</p></div>
+            </div>
+
+            <div onclick="handleOffline()" class="flex items-center gap-4 p-4 rounded-xl border border-gray-300 dark:border-slate-600 hover:border-green-500 cursor-pointer transition group">
+                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 group-hover:bg-green-600 group-hover:text-white transition"><i class="fas fa-wallet text-xl"></i></div>
+                <div><h4 class="font-bold">Pay Offline</h4><p class="text-xs text-gray-500">Cash on Arrival (COD)</p></div>
+            </div>
+            
+            <button onclick="closeModal('payModal')" class="w-full mt-6 text-gray-500 hover:text-red-500 text-sm">Go Back</button>
+        </div>
+    </div>
+
+    <div id="ticketModal" class="modal fixed inset-0 z-[90] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+        <div class="relative bg-white text-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
+            <div class="bg-primary p-6 text-center text-white">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 text-green-600 text-3xl shadow-lg animate-bounce"><i class="fas fa-check"></i></div>
+                <h3 class="text-2xl font-bold">Booking Confirmed!</h3>
+                <p class="text-sm opacity-90">Ticket ID: <span id="disp_ticket_id" class="font-mono bg-black/20 px-2 py-1 rounded"></span></p>
+            </div>
+            
+            <div class="p-6 space-y-3 text-sm" id="ticket-body-content"></div>
+
+            <div class="p-4 bg-gray-50 border-t flex gap-3">
+                <button onclick="downloadTicket()" class="flex-1 bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-slate-800"><i class="fas fa-download mr-2"></i> Download Ticket</button>
+                <button onclick="location.reload()" class="px-4 py-3 rounded-lg border hover:bg-gray-200 text-gray-600"><i class="fas fa-times"></i> Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="printableTicket">
+        <div style="padding: 40px; border: 4px solid #E11D48; background: #fff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="https://i.ibb.co/4wN1qHyv/1764759098932.png" style="height: 60px; filter: brightness(0);" alt="Logo">
+                    <div>
+                        <h1 style="color:#E11D48; margin:0; font-size: 32px; font-weight: 800;">RK TRAVELS</h1>
+                        <p style="margin:5px 0 0; color: #555; text-transform: uppercase; letter-spacing: 2px;">Premium Journey</p>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 14px; color: #777;">Booking ID</div>
+                    <div id="pdf_id" style="font-size: 20px; font-weight: bold; color: #000;"></div>
+                </div>
+            </div>
+            
+            <table style="width:100%; border-collapse: collapse; margin-top: 20px;">
+                <tr style="background: #f9fafb;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Passenger Name</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_name"></td></tr>
+                <tr><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Route</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;"><span id="pdf_from"></span> ➝ <span id="pdf_to"></span></td></tr>
+                <tr style="background: #f9fafb;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Vehicle</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_veh"></td></tr>
+                <tr><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Payment Method</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_pay"></td></tr>
+                <tr style="background: #fff0f5;"><td style="padding:15px; font-weight:bold; color:#E11D48;">Total Amount</td><td style="padding:15px; font-weight:bold; color:#E11D48; font-size: 22px; text-align:right;" id="pdf_cost"></td></tr>
+            </table>
+            
+            <div style="text-align:center; margin-top: 60px; font-size: 12px; color: #888; border-top: 1px solid #eee; padding-top: 20px;">
+                <p style="margin-bottom: 5px;">Thank you for choosing RK Travels. Have a safe journey!</p>
+                <p>Helpline: +91 9607860912 | Email: rktravels@support.com</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------------- CONFIGURATION ----------------
+        
+        const RAZORPAY_KEY = "YOUR_RAZORPAY_KEY_ID"; // Replace if you have a real key
+
+        const EMAIL_SID = "service_7fk8n2f";
+        const EMAIL_TID = "template_n3oy4bn";
+        const EMAIL_KEY = "qE3Vr3MC04BfiP8OE";
+
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyBc1vhiH1J6jKDpzwGF5wFaImRbmq3zwjE",
+            authDomain: "ncx-esports.firebaseapp.com",
+            databaseURL: "https://ncx-esports-default-rtdb.firebaseio.com",
+            projectId: "ncx-esports",
+            storageBucket: "ncx-esports.firebasestorage.app",
+            messagingSenderId: "92021323762",
+            appId: "1:92021323762:web:52133bfdc4fb63621b5d6b",
+            measurementId: "G-RDJRFXVK9V"
+        };
+
+        // ----------------------------------------------------
+
+        (function(){ emailjs.init(EMAIL_KEY); })();
+        if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        const db = firebase.firestore();
+
+        let selectedRate = 15, selectedVehicle = 'Premium AC', totalDistance = 0, totalPrice = 0, bookingDetails = {};
+
+        function toggleTheme() { document.documentElement.classList.toggle('dark'); }
+        function toggleProfile() { document.getElementById('profileModal').classList.toggle('active'); }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        function selectVehicle(type, rate) {
+            selectedRate = rate;
+            selectedVehicle = type === 'ac' ? 'Premium AC' : 'Regular';
+            document.getElementById('opt-regular').className = `cursor-pointer p-4 rounded-xl border-2 transition text-center relative group ${type === 'regular' ? 'border-primary bg-red-50 dark:bg-slate-800' : 'border-transparent bg-gray-50 dark:bg-slate-900'}`;
+            document.getElementById('opt-ac').className = `cursor-pointer p-4 rounded-xl border-2 transition text-center relative group ${type === 'ac' ? 'border-primary bg-red-50 dark:bg-slate-800' : 'border-transparent bg-gray-50 dark:bg-slate-900'}`;
+            if(totalDistance > 0) calculateTotal();
+        }
+
+        async function calculateDistance() {
+            const f = document.getElementById('from').value;
+            const t = document.getElementById('to').value;
+            if(!f || !t) return alert("Please enter both cities.");
+            try {
+                const r1 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${f}`);
+                const d1 = await r1.json();
+                const r2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${t}`);
+                const d2 = await r2.json();
+                if(!d1.length || !d2.length) return alert("City not found.");
+                
+                const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${d1[0].lon},${d1[0].lat};${d2[0].lon},${d2[0].lat}?overview=false`);
+                const rd = await route.json();
+                if(rd.code !== 'Ok') return alert("Route not found.");
+                
+                totalDistance = (rd.routes[0].distance / 1000).toFixed(1);
+                calculateTotal();
+                document.getElementById('resultArea').classList.remove('hidden');
+            } catch (e) { alert("Error calculating distance. Please check internet."); }
+        }
+
+        function calculateTotal() {
+            document.getElementById('displayDist').innerText = totalDistance + " km";
+            document.getElementById('displayRate').innerText = `₹${selectedRate}/km`;
+            let cost = Math.round(totalDistance * selectedRate);
+            if(totalDistance < 250) { 
+                cost += 999; 
+                document.getElementById('extraCharge').classList.remove('hidden'); 
+            } else { 
+                document.getElementById('extraCharge').classList.add('hidden'); 
+            }
+            totalPrice = cost;
+            document.getElementById('displayPrice').innerText = "₹" + totalPrice;
+        }
+
+        function openInfoModal() { openModal('infoModal'); }
+
+        function openPaymentModal() {
+            const name = document.getElementById('p_name').value;
+            const phone = document.getElementById('p_phone').value;
+            const email = document.getElementById('p_email').value;
+            if(!name || !phone || !email) return alert("Please fill all details.");
+            
+            bookingDetails = {
+                name, phone, email, 
+                pax: document.getElementById('p_pax').value,
+                from: document.getElementById('from').value,
+                to: document.getElementById('to').value,
+                vehicle: selectedVehicle,
+                distance: totalDistance,
+                price: totalPrice
+            };
+            closeModal('infoModal');
+            openModal('payModal');
+        }
+
+        function handleOffline() {
+            if(confirm("Are you sure you want to Pay Offline (Cash)?\n\nClick OK to confirm booking.")) {
+                processBooking("Offline (Cash/COD)", "Pending");
+            }
+        }
+
+        function handleOnline() {
+            if(RAZORPAY_KEY === "YOUR_RAZORPAY_KEY_ID") {
+                alert("Online Payment Setup Pending.\nUse Offline Payment to test Email functionality.");
+                return;
+            }
+            var options = {
+                "key": RAZORPAY_KEY,
+                "amount": totalPrice * 100,
+                "name": "RK TRAVELS",
+                "description": "Premium Journey",
+                "handler": function (response) { processBooking("Online (Razorpay)", response.razorpay_payment_id); },
+                "prefill": { "email": bookingDetails.email, "contact": bookingDetails.phone }
+            };
+            var rzp = new Razorpay(options);
+            rzp.open();
+        }
+
+        function processBooking(method, txn) {
+            closeModal('payModal');
+            const uniqueId = "RK-" + Math.floor(100000 + Math.random() * 900000);
+            const finalData = { 
+                ...bookingDetails, 
+                payment: method, 
+                txnId: txn, 
+                bookingId: uniqueId,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(), 
+                date: new Date().toLocaleString() 
+            };
+
+            db.collection('rk_bookings').add(finalData).then(() => {
+                
+                // Email
+                const emailParams = {
+                    to_name: finalData.name,
+                    to_email: finalData.email,
+                    from_loc: finalData.from,
+                    to_loc: finalData.to,
+                    vehicle: finalData.vehicle,
+                    cost: finalData.price,
+                    payment_mode: method,
+                    booking_id: uniqueId,
+                    txn_id: txn
+                };
+
+                emailjs.send(EMAIL_SID, EMAIL_TID, emailParams)
+                    .then(() => console.log("Email Sent Successfully"))
+                    .catch((err) => {
+                        console.error("Email Failed:", err);
+                    });
+
+                showTicket(finalData);
+            }).catch(e => alert("Database Error: " + e.message));
+        }
+
+        function showTicket(data) {
+            // Screen Ticket
+            document.getElementById('disp_ticket_id').innerText = data.bookingId;
+            document.getElementById('ticket-body-content').innerHTML = `
+                <div class="flex justify-between border-b pb-2"><span>From</span><b>${data.from}</b></div>
+                <div class="flex justify-between border-b py-2"><span>To</span><b>${data.to}</b></div>
+                <div class="flex justify-between border-b py-2"><span>Vehicle</span><b>${data.vehicle}</b></div>
+                <div class="flex justify-between border-b py-2"><span>Amount</span><b class="text-primary">₹${data.price}</b></div>
+                <div class="flex justify-between pt-2"><span>Payment</span><span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> ${data.payment}</span></div>
+            `;
+
+            // PDF Ticket Data
+            document.getElementById('pdf_id').innerText = data.bookingId;
+            document.getElementById('pdf_name').innerText = data.name;
+            document.getElementById('pdf_from').innerText = data.from;
+            document.getElementById('pdf_to').innerText = data.to;
+            document.getElementById('pdf_veh').innerText = data.vehicle;
+            document.getElementById('pdf_pay').innerText = data.payment;
+            document.getElementById('pdf_cost').innerText = "₹" + data.price;
+
+            openModal('ticketModal');
+        }
+
+        // FIXED DOWNLOAD FUNCTION
+        function downloadTicket() {
+            const element = document.getElementById('printableTicket');
+            element.style.display = 'block'; // Reveal strictly for generating
+            
+            const opt = {
+                margin: 0,
+                filename: `RK_Travels_${document.getElementById('pdf_id').innerText}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true }, // IMPORTANT: Enable CORS for images
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.style.display = 'none'; // Hide again
+            });
+        }
+    </script>
+</body>
+</html>
