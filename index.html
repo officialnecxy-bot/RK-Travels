@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -31,61 +32,27 @@
 
     <style>
         body { transition: background-color 0.3s, color 0.3s; }
-        
-        /* Logo Logic */
         .logo-img { transition: filter 0.3s; height: 50px; object-fit: contain; filter: brightness(0); }
         .dark .logo-img { filter: brightness(0) invert(1); } 
-        
-        /* Glassmorphism */
         .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); }
         .dark .glass { background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); }
-        
-        /* Modal Animation */
         .modal { opacity: 0; pointer-events: none; transform: scale(0.95); transition: 0.2s ease-in-out; }
         .modal.active { opacity: 1; pointer-events: auto; transform: scale(1); }
-        
-        /* Toast Notification */
-        #toast-container {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-        }
-        .toast {
-            background: #333;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            font-weight: 600;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: 0.3s ease;
-            pointer-events: auto;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 300px;
-            justify-content: center;
-        }
+        #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: #333; color: white; padding: 12px 24px; border-radius: 50px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); font-weight: 600; opacity: 0; transform: translateY(20px); transition: 0.3s ease; pointer-events: auto; display: flex; align-items: center; gap: 10px; min-width: 300px; justify-content: center; }
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast.error { background: #E11D48; }
         .toast.success { background: #10B981; }
-
-        /* HIDDEN TICKET FOR PDF GENERATION (Optimized for PDF) */
-        #printableTicket { 
-            font-family: 'Helvetica', sans-serif; 
-            display: none; 
-            width: 700px; /* Fixed width for A4 */
-            background: #ffffff; 
-            color: #000000;
-            padding: 0;
-        }
+        #printableTicket { font-family: 'Helvetica', sans-serif; display: none; width: 700px; background: #ffffff; color: #000000; padding: 0; }
+        
+        /* Gift Animation */
+        .gift-bounce { animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-5px);} 60% {transform: translateY(-3px);} }
+        /* Green Glow for Discount */
+        .glow-border-green { box-shadow: 0 0 15px rgba(22, 163, 74, 0.3); border-color: #16a34a; }
+        
+        /* Toggle Transition */
+        .trip-toggle-slide { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-light text-slate-800 dark:bg-dark dark:text-white min-h-screen relative overflow-x-hidden">
@@ -137,41 +104,121 @@
         </div>
 
         <div class="max-w-2xl mx-auto glass rounded-3xl p-6 md:p-10 shadow-xl">
-            <div class="mb-6">
-                <h3 class="text-lg font-bold mb-3 flex items-center gap-2"><i class="fas fa-car text-primary"></i> Select Vehicle</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div onclick="selectVehicle('regular', 13)" id="opt-regular" class="cursor-pointer p-4 rounded-xl border-2 border-transparent bg-gray-50 dark:bg-slate-900 hover:border-gray-300 text-center relative group transition">
-                        <i class="fas fa-car-side text-3xl mb-2 text-gray-500"></i>
-                        <h4 class="font-bold">Regular</h4>
-                        <p class="text-sm text-gray-500">₹13 / km</p>
+            
+            <div class="mb-4">
+                <h3 class="text-sm font-bold mb-2 flex items-center gap-2 text-gray-500 uppercase tracking-wider"><i class="fas fa-car text-primary"></i> Select Vehicle</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div onclick="selectVehicle('regular', 13)" id="opt-regular" class="cursor-pointer p-3 rounded-xl border-2 border-transparent bg-gray-50 dark:bg-slate-900 hover:border-gray-300 relative group transition flex items-center gap-3">
+                        <i class="fas fa-car-side text-2xl text-gray-500"></i>
+                        <div class="text-left">
+                            <h4 class="font-bold text-sm leading-tight">Regular</h4>
+                            <p class="text-[10px] text-gray-500">₹13 / km</p>
+                        </div>
                     </div>
-                    <div onclick="selectVehicle('ac', 15)" id="opt-ac" class="cursor-pointer p-4 rounded-xl border-2 border-primary bg-red-50 dark:bg-slate-800 text-center relative transition">
-                        <div class="absolute top-2 right-2 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded">POPULAR</div>
-                        <i class="fas fa-snowflake text-3xl mb-2 text-primary"></i>
-                        <h4 class="font-bold">Premium AC</h4>
-                        <p class="text-sm text-gray-500">₹15 / km</p>
+                    <div onclick="selectVehicle('ac', 15)" id="opt-ac" class="cursor-pointer p-3 rounded-xl border-2 border-primary bg-red-50 dark:bg-slate-800 relative transition flex items-center gap-3">
+                        <div class="absolute -top-2 -right-2 bg-primary text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm">BEST</div>
+                        <i class="fas fa-snowflake text-2xl text-primary"></i>
+                        <div class="text-left">
+                            <h4 class="font-bold text-sm leading-tight">Premium AC</h4>
+                            <p class="text-[10px] text-gray-500">₹15 / km</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+
+                <div class="mt-6 mb-2">
+                    <div class="relative w-full bg-gray-200 dark:bg-slate-800 rounded-lg p-1 h-11 flex shadow-inner border border-gray-300 dark:border-slate-700 overflow-hidden cursor-pointer">
+                        
+                        <div id="trip-bg-slider" class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white dark:bg-slate-600 rounded-md shadow-md trip-toggle-slide z-0" style="transform: translateX(0px);"></div>
+
+                        <div onclick="toggleRoundTrip(false)" class="flex-1 relative z-10 flex flex-col items-center justify-center h-full transition duration-300">
+                            <span id="label-oneway" class="text-xs font-bold text-primary dark:text-primary uppercase tracking-wide transition-colors">One Way</span>
+                            <span id="sub-oneway" class="text-[8px] font-medium text-slate-500 dark:text-slate-300 transition-colors">Drop Only</span>
+                        </div>
+
+                        <div onclick="toggleRoundTrip(true)" class="flex-1 relative z-10 flex flex-col items-center justify-center h-full transition duration-300">
+                            <span id="label-round" class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide transition-colors">Round Trip</span>
+                            <span id="sub-round" class="text-[8px] font-medium text-gray-400 dark:text-gray-500 transition-colors">Return Journey</span>
+                        </div>
+
+                    </div>
+                </div>
+                </div>
 
             <div class="space-y-4 mb-6">
-                <h3 class="text-lg font-bold flex items-center gap-2"><i class="fas fa-route text-primary"></i> Route</h3>
+                <h3 class="text-sm font-bold flex items-center gap-2 text-gray-500 uppercase tracking-wider"><i class="fas fa-route text-primary"></i> Route</h3>
                 <div class="relative"><i class="fas fa-dot-circle absolute left-4 top-4 text-green-500"></i><input type="text" id="from" placeholder="Pickup City" class="w-full pl-10 p-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 outline-none"></div>
                 <div class="relative"><i class="fas fa-map-marker-alt absolute left-4 top-4 text-primary"></i><input type="text" id="to" placeholder="Drop City" class="w-full pl-10 p-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 outline-none"></div>
             </div>
 
-            <button onclick="calculateDistance()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition mb-6 shadow-lg">
+            <button id="calcBtn" onclick="calculateDistance()" class="w-full bg-slate-800 dark:bg-slate-700 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition mb-6 shadow-lg">
                 <i class="fas fa-calculator mr-2"></i> Calculate Price
             </button>
 
-            <div id="resultArea" class="hidden p-6 bg-slate-900 text-white rounded-2xl shadow-inner border border-slate-700">
+            <div id="calcLoader" class="hidden w-full py-6 mb-6 flex flex-col items-center justify-center bg-gray-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-gray-300 dark:border-slate-700">
+                <div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-3"></div>
+                <p class="text-sm font-bold text-gray-500 animate-pulse">Analyzing Best Route...</p>
+            </div>
+
+            <div id="resultArea" class="hidden p-6 bg-slate-900 text-white rounded-2xl shadow-inner border border-slate-700 relative overflow-hidden transition-all duration-500">
+                
+                <div id="offerBadge" class="hidden mb-4 bg-gradient-to-r from-green-500/20 to-teal-500/20 border border-green-500/50 rounded-xl p-3 flex items-center gap-3 glow-border-green">
+                    <div class="w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold text-lg gift-bounce"><i class="fas fa-gift"></i></div>
+                    <div class="flex-1">
+                        <h4 class="font-extrabold text-green-500 text-sm uppercase tracking-wide" id="offerTitle">SPECIAL OFFER</h4>
+                        <p class="text-[10px] text-gray-400">Limited time deal applied!</p>
+                    </div>
+                    <div class="text-xl font-black text-white bg-green-600 px-2 py-1 rounded-lg transform -rotate-2" id="offerPercentDisplay">0% OFF</div>
+                </div>
+
                 <div class="flex justify-between items-center mb-2"><span class="text-gray-400">Total Distance</span><span class="font-bold text-xl" id="displayDist">0 km</span></div>
                 <div class="flex justify-between items-center mb-4"><span class="text-gray-400">Rate applied</span><span class="font-bold text-sm" id="displayRate">₹15/km</span></div>
                 <div id="extraCharge" class="hidden bg-red-600/20 text-red-400 p-2 rounded-lg text-xs mb-4 text-center border border-red-600/30"><i class="fas fa-info-circle"></i> Minimum distance charge (250km) applied: +₹999</div>
-                <div class="border-t border-gray-700 pt-4 flex justify-between items-center"><span class="text-lg font-bold">Total Fare</span><span class="text-3xl font-extrabold text-primary" id="displayPrice">₹0</span></div>
                 
+                <div class="border-t border-gray-700 pt-4 flex justify-between items-center">
+                    <span class="text-lg font-bold">Total Fare</span>
+                    <div class="text-right flex flex-col items-end">
+                        <span id="oldPrice" class="hidden text-sm text-gray-500 line-through decoration-primary decoration-2 mr-1">₹0</span>
+                        <span class="text-3xl font-extrabold text-primary" id="displayPrice">₹0</span>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex items-start gap-3">
+                    <i class="fas fa-info-circle text-yellow-500 mt-1"></i>
+                    <p class="text-xs text-yellow-500/90 font-medium leading-relaxed">
+                        Note: Toll Tax, Parking & State Entry Tax are <span class="underline">not included</span> and must be paid by the customer directly during the journey.
+                    </p>
+                </div>
+
                 <button onclick="openInfoModal()" class="w-full mt-6 bg-primary hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-red-600/30 transition transform active:scale-95">PROCEED TO BOOK <i class="fas fa-arrow-right ml-2"></i></button>
             </div>
+        </div>
+
+        <div class="max-w-2xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <a href="tel:9607860912" class="glass p-4 rounded-2xl flex items-center justify-between group hover:border-blue-500/50 transition cursor-pointer bg-white/50 dark:bg-slate-800/50">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 group-hover:scale-110 transition">
+                        <i class="fas fa-phone-alt"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 dark:text-white">Call to Book</h4>
+                        <p class="text-xs text-gray-500">Speak to owner directly</p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right text-gray-400 group-hover:text-blue-500 transition"></i>
+            </a>
+
+            <a href="https://wa.me/919607860912?text=Hello RK Travels, I want to book a cab." target="_blank" class="glass p-4 rounded-2xl flex items-center justify-between group hover:border-green-500/50 transition cursor-pointer bg-white/50 dark:bg-slate-800/50">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 group-hover:scale-110 transition">
+                        <i class="fab fa-whatsapp text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 dark:text-white">WhatsApp</h4>
+                        <p class="text-xs text-gray-500">Chat for details</p>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-right text-gray-400 group-hover:text-green-500 transition"></i>
+            </a>
         </div>
     </div>
 
@@ -180,9 +227,17 @@
         <div class="relative bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl border border-gray-200 dark:border-slate-700 overflow-y-auto max-h-[90vh]">
             <h3 class="text-2xl font-bold mb-6 text-center">Journey Details</h3>
             <div class="space-y-4">
-                <div class="flex flex-col gap-1">
-                    <label class="text-xs font-bold text-gray-500 uppercase">Booking Date <span class="text-red-500">*</span></label>
-                    <input type="date" id="b_date" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 outline-none">
+                
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Booking Date <span class="text-red-500">*</span></label>
+                        <input type="date" id="b_date" onchange="updateReturnMinDate()" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 outline-none">
+                    </div>
+
+                    <div id="return_date_container" class="hidden flex flex-col gap-1">
+                        <label class="text-xs font-bold text-gray-500 uppercase text-blue-500">Return Date <span class="text-red-500">*</span></label>
+                        <input type="date" id="return_date" class="w-full p-3 rounded-lg bg-gray-50 dark:bg-slate-900 border border-blue-500/50 dark:border-blue-500/50 outline-none">
+                    </div>
                 </div>
                 
                 <div class="flex flex-col gap-1">
@@ -217,12 +272,12 @@
             
             <div onclick="handleOnline()" class="flex items-center gap-4 p-4 rounded-xl border border-gray-300 dark:border-slate-600 hover:border-blue-500 cursor-pointer transition mb-3 group">
                 <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition"><i class="fas fa-credit-card text-xl"></i></div>
-                <div><h4 class="font-bold">Pay Online</h4><p class="text-xs text-gray-500">Cards, UPI (Razorpay)</p></div>
+                <div><h4 class="font-bold">Pay Online</h4><p class="text-xs text-gray-500">Cards, UPI</p></div>
             </div>
 
             <div onclick="handleOffline()" class="flex items-center gap-4 p-4 rounded-xl border border-gray-300 dark:border-slate-600 hover:border-green-500 cursor-pointer transition group">
                 <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 group-hover:bg-green-600 group-hover:text-white transition"><i class="fas fa-wallet text-xl"></i></div>
-                <div><h4 class="font-bold">Pay Offline</h4><p class="text-xs text-gray-500">Cash on Arrival (COD)</p></div>
+                <div><h4 class="font-bold">Pay Offline</h4><p class="text-xs text-gray-500">After Trip</p></div>
             </div>
             
             <button onclick="closeModal('payModal')" class="w-full mt-6 text-gray-500 hover:text-red-500 text-sm">Go Back</button>
@@ -267,8 +322,13 @@
                 <tr style="background: #f9fafb;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Passenger Name</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_name"></td></tr>
                 <tr><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Route</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;"><span id="pdf_from"></span> ➝ <span id="pdf_to"></span></td></tr>
                 <tr style="background: #f9fafb;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Vehicle</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_veh"></td></tr>
-                <tr style="background: #fff;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Date & Duration</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_date"></td></tr>
+                <tr style="background: #fff;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Start Date</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_date"></td></tr>
+                <tr id="pdf_return_row" style="display:none; background: #e0f2fe;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Return Date</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_return"></td></tr>
+                <tr><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Trip Type</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_type"></td></tr>
                 <tr><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#333;">Payment Method</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right;" id="pdf_pay"></td></tr>
+                
+                <tr id="pdf_discount_row" style="display:none; background: #f0fdf4;"><td style="padding:15px; font-weight:bold; border-bottom:1px solid #eee; color:#15803d;" id="pdf_disc_title">Discount</td><td style="padding:15px; border-bottom:1px solid #eee; text-align:right; color:#15803d;" id="pdf_disc_amt"></td></tr>
+
                 <tr style="background: #fff0f5;"><td style="padding:15px; font-weight:bold; color:#E11D48;">Total Amount</td><td style="padding:15px; font-weight:bold; color:#E11D48; font-size: 22px; text-align:right;" id="pdf_cost"></td></tr>
             </table>
             
@@ -280,14 +340,19 @@
     </div>
 
     <script>
-        // ---------------- CONFIGURATION ----------------
+        // ==========================================
+        //         CONFIGURATIONS & SETTINGS
+        // ==========================================
         
-        const RAZORPAY_KEY = "YOUR_RAZORPAY_KEY_ID"; // Replace if you have a real key
-
-        const EMAIL_SID = "service_7fk8n2f";
+        // 1. EmailJS Credentials (REPLACE THESE WITH YOURS)
+        const EMAIL_SID = "service_54hp8dd"; 
         const EMAIL_TID = "template_n3oy4bn";
         const EMAIL_KEY = "qE3Vr3MC04BfiP8OE";
 
+        // 2. Razorpay Key
+        const RAZORPAY_KEY = "rzp_test_RnFLVgDqm5QY2G"; 
+
+        // 3. Firebase Config
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyBc1vhiH1J6jKDpzwGF5wFaImRbmq3zwjE",
             authDomain: "ncx-esports.firebaseapp.com",
@@ -299,19 +364,50 @@
             measurementId: "G-RDJRFXVK9V"
         };
 
-        // ----------------------------------------------------
+        // ==========================================
 
-        (function(){ emailjs.init(EMAIL_KEY); })();
+        // Initialize Services
+        (function(){
+            try {
+                emailjs.init(EMAIL_KEY);
+                console.log("EmailJS Ready");
+            } catch (e) {
+                console.error("EmailJS Init Failed:", e);
+                showToast("Email Service Error", "error");
+            }
+        })();
+
         if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
         const db = firebase.firestore();
 
+        // Variables
         let selectedRate = 15, selectedVehicle = 'Premium AC', totalDistance = 0, totalPrice = 0, bookingDetails = {};
+        let isRoundTrip = false; 
+        let DISCOUNT_OFFER = { active: false, title: "SPECIAL OFFER", percent: 0 };
 
-        // Set Date Input Min Value to Today
+        // Listen for Admin Discount
+        db.collection('rk_settings').doc('general_offer').onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                DISCOUNT_OFFER.active = data.active || false;
+                DISCOUNT_OFFER.title = data.title || "Special Discount";
+                DISCOUNT_OFFER.percent = Number(data.percent) || 0;
+                if(!document.getElementById('resultArea').classList.contains('hidden')) calculateTotal();
+            }
+        });
+
+        // Set Date Limits
         window.addEventListener('load', () => {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('b_date').setAttribute('min', today);
         });
+
+        function updateReturnMinDate() {
+            const bookingDate = document.getElementById('b_date').value;
+            if (bookingDate) document.getElementById('return_date').setAttribute('min', bookingDate);
+        }
+
+        // --- CORE FUNCTIONS ---
 
         function showToast(message, type = 'error') {
             const container = document.getElementById('toast-container');
@@ -319,15 +415,8 @@
             toast.className = `toast ${type}`;
             toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> <span>${message}</span>`;
             container.appendChild(toast);
-            
-            // Trigger animation
             setTimeout(() => toast.classList.add('show'), 100);
-
-            // Remove after 4 seconds
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 4000);
         }
 
         function toggleTheme() { document.documentElement.classList.toggle('dark'); }
@@ -338,204 +427,203 @@
         function selectVehicle(type, rate) {
             selectedRate = rate;
             selectedVehicle = type === 'ac' ? 'Premium AC' : 'Regular';
-            document.getElementById('opt-regular').className = `cursor-pointer p-4 rounded-xl border-2 transition text-center relative group ${type === 'regular' ? 'border-primary bg-red-50 dark:bg-slate-800' : 'border-transparent bg-gray-50 dark:bg-slate-900'}`;
-            document.getElementById('opt-ac').className = `cursor-pointer p-4 rounded-xl border-2 transition text-center relative group ${type === 'ac' ? 'border-primary bg-red-50 dark:bg-slate-800' : 'border-transparent bg-gray-50 dark:bg-slate-900'}`;
+            document.getElementById('opt-regular').className = `cursor-pointer p-3 rounded-xl border-2 transition relative group flex items-center gap-3 ${type === 'regular' ? 'border-primary bg-red-50 dark:bg-slate-800' : 'border-transparent bg-gray-50 dark:bg-slate-900'}`;
+            document.getElementById('opt-ac').className = `cursor-pointer p-3 rounded-xl border-2 transition relative flex items-center gap-3 ${type === 'ac' ? 'border-primary bg-red-50 dark:bg-slate-800' : 'border-transparent bg-gray-50 dark:bg-slate-900'}`;
+            if(totalDistance > 0) calculateTotal();
+        }
+
+        function toggleRoundTrip(forceState = null) {
+            if(forceState !== null) {
+                if(isRoundTrip === forceState) return;
+                isRoundTrip = forceState;
+            } else {
+                isRoundTrip = !isRoundTrip;
+            }
+            
+            const slider = document.getElementById('trip-bg-slider');
+            const labelOne = document.getElementById('label-oneway');
+            const subOne = document.getElementById('sub-oneway');
+            const labelRound = document.getElementById('label-round');
+            const subRound = document.getElementById('sub-round');
+            const returnDateContainer = document.getElementById('return_date_container');
+
+            if(isRoundTrip) {
+                slider.style.transform = "translateX(100%)";
+                labelOne.className = "text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide transition-colors";
+                subOne.className = "text-[8px] font-medium text-gray-400 dark:text-gray-500 transition-colors";
+                labelRound.className = "text-xs font-bold text-primary dark:text-primary uppercase tracking-wide transition-colors";
+                subRound.className = "text-[8px] font-medium text-slate-500 dark:text-slate-300 transition-colors";
+                returnDateContainer.classList.remove('hidden');
+            } else {
+                slider.style.transform = "translateX(0px)";
+                labelOne.className = "text-xs font-bold text-primary dark:text-primary uppercase tracking-wide transition-colors";
+                subOne.className = "text-[8px] font-medium text-slate-500 dark:text-slate-300 transition-colors";
+                labelRound.className = "text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide transition-colors";
+                subRound.className = "text-[8px] font-medium text-gray-400 dark:text-gray-500 transition-colors";
+                returnDateContainer.classList.add('hidden'); 
+                document.getElementById('return_date').value = ""; 
+            }
             if(totalDistance > 0) calculateTotal();
         }
 
         async function calculateDistance() {
             const f = document.getElementById('from').value;
             const t = document.getElementById('to').value;
+            document.getElementById('resultArea').classList.add('hidden');
+
             if(!f || !t) return showToast("Please enter both cities.");
+
+            document.getElementById('calcBtn').classList.add('hidden');
+            document.getElementById('calcLoader').classList.remove('hidden');
+
             try {
                 const r1 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${f}`);
                 const d1 = await r1.json();
                 const r2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${t}`);
                 const d2 = await r2.json();
-                if(!d1.length || !d2.length) return showToast("City not found.");
-                
+                if(!d1.length || !d2.length) {
+                    document.getElementById('calcLoader').classList.add('hidden');
+                    document.getElementById('calcBtn').classList.remove('hidden');
+                    return showToast("City not found.");
+                }
                 const route = await fetch(`https://router.project-osrm.org/route/v1/driving/${d1[0].lon},${d1[0].lat};${d2[0].lon},${d2[0].lat}?overview=false`);
                 const rd = await route.json();
-                if(rd.code !== 'Ok') return showToast("Route not found.");
+                if(rd.code !== 'Ok') throw new Error("Route API Failed");
                 
                 totalDistance = (rd.routes[0].distance / 1000).toFixed(1);
                 calculateTotal();
+                document.getElementById('calcLoader').classList.add('hidden');
                 document.getElementById('resultArea').classList.remove('hidden');
-            } catch (e) { showToast("Error calculating distance."); }
+            } catch (e) { 
+                document.getElementById('calcLoader').classList.add('hidden');
+                document.getElementById('calcBtn').classList.remove('hidden');
+                showToast("Error calculating distance."); 
+            }
         }
 
         function calculateTotal() {
-            document.getElementById('displayDist').innerText = totalDistance + " km";
+            let finalDistance = isRoundTrip ? (totalDistance * 2).toFixed(1) : totalDistance;
+            let tripLabel = isRoundTrip ? " (Round Trip)" : "";
+            document.getElementById('displayDist').innerText = finalDistance + " km" + tripLabel;
             document.getElementById('displayRate').innerText = `₹${selectedRate}/km`;
-            let cost = Math.round(totalDistance * selectedRate);
-            if(totalDistance < 250) { 
-                cost += 999; 
-                document.getElementById('extraCharge').classList.remove('hidden'); 
-            } else { 
-                document.getElementById('extraCharge').classList.add('hidden'); 
+            
+            let cost = Math.round(finalDistance * selectedRate);
+            if(finalDistance < 250) { cost += 999; document.getElementById('extraCharge').classList.remove('hidden'); } else { document.getElementById('extraCharge').classList.add('hidden'); }
+
+            if(DISCOUNT_OFFER.active && DISCOUNT_OFFER.percent > 0) {
+                let discountAmount = Math.round(cost * (DISCOUNT_OFFER.percent / 100));
+                totalPrice = cost - discountAmount;
+                document.getElementById('offerBadge').classList.remove('hidden');
+                document.getElementById('offerTitle').innerText = DISCOUNT_OFFER.title;
+                document.getElementById('offerPercentDisplay').innerText = `${DISCOUNT_OFFER.percent}% OFF`;
+                document.getElementById('oldPrice').classList.remove('hidden');
+                document.getElementById('oldPrice').innerText = "₹" + cost;
+            } else {
+                document.getElementById('offerBadge').classList.add('hidden');
+                document.getElementById('oldPrice').classList.add('hidden');
+                totalPrice = cost;
             }
-            totalPrice = cost;
             document.getElementById('displayPrice').innerText = "₹" + totalPrice;
         }
 
         function openInfoModal() { openModal('infoModal'); }
 
-        // NEW: Check Availability function
         async function checkAvailabilityAndProceed() {
             const date = document.getElementById('b_date').value;
+            const returnDate = document.getElementById('return_date').value;
             const days = document.getElementById('b_days').value || "1";
             const name = document.getElementById('p_name').value;
             const phone = document.getElementById('p_phone').value;
             const email = document.getElementById('p_email').value;
 
             if(!date) return showToast("Please select a Booking Date.");
+            if(isRoundTrip && !returnDate) return showToast("Please select a Return Date.");
             if(!name || !phone || !email) return showToast("Please fill all details.");
 
             const btnText = document.getElementById('btnText');
             const btnLoad = document.getElementById('btnLoad');
-            
-            // UI Loading state
-            btnText.innerText = "Checking...";
-            btnLoad.classList.remove('hidden');
+            btnText.innerText = "Checking..."; btnLoad.classList.remove('hidden');
 
             try {
-                // Check Firestore for this specific date
-                const snapshot = await db.collection('rk_bookings')
-                                        .where('journeyDate', '==', date)
-                                        .get();
-
-                if (!snapshot.empty) {
-                    // Alert User - Date is booked
-                    showToast(`Date ${date} is already booked! Please choose another date.`, 'error');
-                } else {
-                    // Proceed to payment
+                const snapshot = await db.collection('rk_bookings').where('journeyDate', '==', date).get();
+                if (!snapshot.empty) { showToast(`Date ${date} is already booked!`, 'error'); } 
+                else {
                     bookingDetails = {
-                        name, phone, email, 
-                        pax: document.getElementById('p_pax').value,
-                        from: document.getElementById('from').value,
-                        to: document.getElementById('to').value,
-                        journeyDate: date,
-                        journeyDays: days,
-                        vehicle: selectedVehicle,
-                        distance: totalDistance,
-                        price: totalPrice
+                        name, phone, email, pax: document.getElementById('p_pax').value,
+                        from: document.getElementById('from').value, to: document.getElementById('to').value,
+                        journeyDate: date, journeyDays: days, vehicle: selectedVehicle,
+                        tripType: isRoundTrip ? "Round Trip" : "One Way", returnDate: isRoundTrip ? returnDate : "N/A",
+                        distance: isRoundTrip ? (totalDistance * 2).toFixed(1) : totalDistance, price: totalPrice,
+                        isDiscountApplied: DISCOUNT_OFFER.active, discountTitle: DISCOUNT_OFFER.active ? DISCOUNT_OFFER.title : "", discountPercent: DISCOUNT_OFFER.active ? DISCOUNT_OFFER.percent : 0
                     };
-                    closeModal('infoModal');
-                    openModal('payModal');
+                    closeModal('infoModal'); openModal('payModal');
                 }
-            } catch (error) {
-                console.error(error);
-                showToast("System Check Failed. Check Internet.");
-            } finally {
-                btnText.innerText = "Next";
-                btnLoad.classList.add('hidden');
-            }
+            } catch (error) { showToast("System Check Failed. Check Internet."); } 
+            finally { btnText.innerText = "Next"; btnLoad.classList.add('hidden'); }
         }
 
-        function handleOffline() {
-            if(confirm("Are you sure you want to Pay Offline (Cash)?\n\nClick OK to confirm booking.")) {
-                processBooking("Offline (Cash/COD)", "Pending");
-            }
-        }
-
+        function handleOffline() { if(confirm("Confirm booking (Cash Payment)?")) processBooking("Offline (Cash/COD)", "Pending"); }
         function handleOnline() {
-            if(RAZORPAY_KEY === "YOUR_RAZORPAY_KEY_ID") {
-                showToast("Online Payment Setup Pending. Use Offline.");
-                return;
-            }
-            var options = {
-                "key": RAZORPAY_KEY,
-                "amount": totalPrice * 100,
-                "name": "RK TRAVELS",
-                "description": "Premium Journey",
-                "handler": function (response) { processBooking("Online (Razorpay)", response.razorpay_payment_id); },
-                "prefill": { "email": bookingDetails.email, "contact": bookingDetails.phone }
-            };
-            var rzp = new Razorpay(options);
-            rzp.open();
+            if(RAZORPAY_KEY === "YOUR_RAZORPAY_KEY_ID") { showToast("Online Payment Setup Pending. Use Offline."); return; }
+            var options = { "key": RAZORPAY_KEY, "amount": totalPrice * 100, "name": "RK TRAVELS", "description": "Premium Journey", "handler": function (response) { processBooking("Online (Razorpay)", response.razorpay_payment_id); }, "prefill": { "email": bookingDetails.email, "contact": bookingDetails.phone } };
+            var rzp = new Razorpay(options); rzp.open();
         }
 
         function processBooking(method, txn) {
-            closeModal('payModal');
-            showToast("Processing Booking...", "success");
-
+            closeModal('payModal'); showToast("Processing Booking...", "warning"); 
             const uniqueId = "RK-" + Math.floor(100000 + Math.random() * 900000);
-            const finalData = { 
-                ...bookingDetails, 
-                payment: method, 
-                txnId: txn, 
-                bookingId: uniqueId,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(), 
-                createdDate: new Date().toLocaleString() 
-            };
+            const finalData = { ...bookingDetails, payment: method, txnId: txn, bookingId: uniqueId, timestamp: firebase.firestore.FieldValue.serverTimestamp(), createdDate: new Date().toLocaleString() };
 
             db.collection('rk_bookings').add(finalData).then(() => {
-                
-                // Email
+                // --- EMAIL LOGIC ---
                 const emailParams = {
-                    to_name: finalData.name,
-                    to_email: finalData.email,
-                    from_loc: finalData.from,
-                    to_loc: finalData.to,
-                    vehicle: finalData.vehicle,
-                    journey_date: finalData.journeyDate,
-                    days: finalData.journeyDays,
-                    cost: finalData.price,
-                    payment_mode: method,
-                    booking_id: uniqueId,
-                    txn_id: txn
+                    to_name: finalData.name, name: finalData.name, customer_name: finalData.name, to_email: finalData.email, email: finalData.email, user_email: finalData.email, reply_to: finalData.email,    
+                    from_loc: finalData.from, to_loc: finalData.to, vehicle: finalData.vehicle, journey_date: finalData.journeyDate, return_date: finalData.returnDate, journey_days: finalData.journeyDays, trip_type: finalData.tripType, 
+                    cost: finalData.price, payment_mode: method, booking_id: uniqueId, txn_id: txn
                 };
-
+                
+                // Explicitly call send and alert if it fails
                 emailjs.send(EMAIL_SID, EMAIL_TID, emailParams)
-                    .then(() => console.log("Email Sent Successfully"))
-                    .catch((err) => console.error("Email Failed:", err));
+                    .then(() => { showToast("Ticket Sent to Email!", "success"); })
+                    .catch((err) => { 
+                        console.error("EMAIL FAILED:", err);
+                        alert("Booking Successful, BUT Email Failed!\n\nReason: " + JSON.stringify(err) + "\n\nPlease check console or contact admin.");
+                    });
 
                 showTicket(finalData);
-                showToast("Booking Successful!", "success");
             }).catch(e => showToast("Database Error: " + e.message));
         }
 
         function showTicket(data) {
-            // Screen Ticket
             document.getElementById('disp_ticket_id').innerText = data.bookingId;
+            let returnRow = (data.tripType === 'Round Trip') ? `<div class="flex justify-between border-b py-2"><span>Return Date</span><b class="text-blue-600">${data.returnDate}</b></div>` : '';
+            let discountRow = (data.isDiscountApplied) ? `<div class="flex justify-between border-b py-2 bg-green-50 p-2 rounded"><span class="text-green-700 font-bold">${data.discountTitle}</span><b class="text-green-700">-${data.discountPercent}% OFF</b></div>` : '';
+
             document.getElementById('ticket-body-content').innerHTML = `
-                <div class="flex justify-between border-b pb-2"><span>Date</span><b>${data.journeyDate}</b></div>
+                <div class="flex justify-between border-b pb-2"><span>Start Date</span><b>${data.journeyDate}</b></div> ${returnRow}
+                <div class="flex justify-between border-b py-2"><span>Type</span><b class="text-blue-600">${data.tripType}</b></div>
                 <div class="flex justify-between border-b py-2"><span>From</span><b>${data.from}</b></div>
                 <div class="flex justify-between border-b py-2"><span>To</span><b>${data.to}</b></div>
-                <div class="flex justify-between border-b py-2"><span>Vehicle</span><b>${data.vehicle}</b></div>
+                <div class="flex justify-between border-b py-2"><span>Vehicle</span><b>${data.vehicle}</b></div> ${discountRow}
                 <div class="flex justify-between border-b py-2"><span>Amount</span><b class="text-primary">₹${data.price}</b></div>
                 <div class="flex justify-between pt-2"><span>Payment</span><span class="text-green-600 font-bold"><i class="fas fa-check-circle"></i> ${data.payment}</span></div>
             `;
-
-            // PDF Ticket Data
-            document.getElementById('pdf_id').innerText = data.bookingId;
-            document.getElementById('pdf_name').innerText = data.name;
-            document.getElementById('pdf_from').innerText = data.from;
-            document.getElementById('pdf_to').innerText = data.to;
-            document.getElementById('pdf_veh').innerText = data.vehicle;
-            document.getElementById('pdf_date').innerText = `${data.journeyDate} (${data.journeyDays} Days)`;
-            document.getElementById('pdf_pay').innerText = data.payment;
-            document.getElementById('pdf_cost').innerText = "₹" + data.price;
+            // PDF Population (simplified for brevity, logic remains same)
+            document.getElementById('pdf_id').innerText = data.bookingId; document.getElementById('pdf_name').innerText = data.name; document.getElementById('pdf_from').innerText = data.from; document.getElementById('pdf_to').innerText = data.to; document.getElementById('pdf_veh').innerText = data.vehicle; document.getElementById('pdf_date').innerText = `${data.journeyDate} (${data.journeyDays} Days)`; document.getElementById('pdf_type').innerText = data.tripType; document.getElementById('pdf_pay').innerText = data.payment; document.getElementById('pdf_cost').innerText = "₹" + data.price;
+            
+            document.getElementById('pdf_return_row').style.display = (data.tripType === 'Round Trip') ? 'table-row' : 'none';
+            if(data.tripType === 'Round Trip') document.getElementById('pdf_return').innerText = data.returnDate;
+            
+            document.getElementById('pdf_discount_row').style.display = (data.isDiscountApplied) ? 'table-row' : 'none';
+            if(data.isDiscountApplied) { document.getElementById('pdf_disc_title').innerText = data.discountTitle; document.getElementById('pdf_disc_amt').innerText = `-${data.discountPercent}%`; }
 
             openModal('ticketModal');
         }
 
-        // FIXED DOWNLOAD FUNCTION
         function downloadTicket() {
-            const element = document.getElementById('printableTicket');
-            element.style.display = 'block'; // Reveal strictly for generating
-            
-            const opt = {
-                margin: 0,
-                filename: `RK_Travels_${document.getElementById('pdf_id').innerText}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true }, // IMPORTANT: Enable CORS for images
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(element).save().then(() => {
-                element.style.display = 'none'; // Hide again
-            });
+            const element = document.getElementById('printableTicket'); element.style.display = 'block'; 
+            const opt = { margin: 0, filename: `RK_Travels_${document.getElementById('pdf_id').innerText}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+            html2pdf().set(opt).from(element).save().then(() => { element.style.display = 'none'; });
         }
     </script>
 </body>
