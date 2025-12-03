@@ -266,7 +266,7 @@
             </div>
             <div onclick="handleOffline()" class="flex items-center gap-4 p-4 rounded-xl border border-gray-300 dark:border-slate-600 hover:border-green-500 cursor-pointer transition group">
                 <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 group-hover:bg-green-600 group-hover:text-white transition"><i class="fas fa-wallet text-xl"></i></div>
-                <div><h4 class="font-bold">Pay Offline</h4><p class="text-xs text-gray-500">Cash on Arrival (COD)</p></div>
+                <div><h4 class="font-bold">Pay Offline</h4><p class="text-xs text-gray-500">After Trip</p></div>
             </div>
             <button onclick="closeModal('payModal')" class="w-full mt-6 text-gray-500 hover:text-red-500 text-sm">Go Back</button>
         </div>
@@ -324,7 +324,7 @@
     <script>
         // ---------------- CONFIGURATION ----------------
         const RAZORPAY_KEY = "YOUR_RAZORPAY_KEY_ID"; 
-        const EMAIL_SID = "service_7fk8n2f"; 
+        const EMAIL_SID = "service_54hp8dd"; 
         const EMAIL_TID = "template_n3oy4bn";
         const EMAIL_KEY = "qE3Vr3MC04BfiP8OE";
 
@@ -540,7 +540,7 @@
             finally { btnText.innerText = "Next"; btnLoad.classList.add('hidden'); }
         }
 
-        function handleOffline() { if(confirm("Confirm booking (Cash Payment)?")) processBooking("Offline (Cash/COD)", "Pending"); }
+        function handleOffline() { if(confirm("Confirm booking (Cash Payment)?")) processBooking("Offline (After Trip)", "Pending"); }
         function handleOnline() {
             if(RAZORPAY_KEY === "YOUR_RAZORPAY_KEY_ID") { showToast("Online Payment Setup Pending. Use Offline."); return; }
             var options = { "key": RAZORPAY_KEY, "amount": totalPrice * 100, "name": "RK TRAVELS", "description": "Premium Journey", "handler": function (response) { processBooking("Online (Razorpay)", response.razorpay_payment_id); }, "prefill": { "email": bookingDetails.email, "contact": bookingDetails.phone } };
