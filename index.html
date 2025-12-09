@@ -346,6 +346,19 @@
         </div>
     </div>
 
+    <div id="offlineConfirmModal" class="modal fixed inset-0 z-[85] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('offlineConfirmModal')"></div>
+        <div class="relative bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl border border-gray-200 dark:border-slate-700 text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600 text-3xl"><i class="fas fa-money-bill-wave"></i></div>
+            <h3 class="text-xl font-bold mb-2">Confirm Cash Booking?</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Your booking will be confirmed immediately. You can pay the driver directly in cash after the trip.</p>
+            <div class="flex gap-3">
+                <button onclick="closeModal('offlineConfirmModal')" class="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 hover:bg-gray-100 dark:hover:bg-slate-700 transition font-semibold text-sm">Cancel</button>
+                <button onclick="confirmOfflineBooking()" class="flex-1 py-2.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-bold text-sm shadow-lg shadow-green-600/30">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <div id="ticketModal" class="modal fixed inset-0 z-[90] flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
         <div class="relative bg-white text-slate-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
@@ -617,7 +630,17 @@
             finally { btnText.innerText = "Next"; btnLoad.classList.add('hidden'); }
         }
 
-        function handleOffline() { if(confirm("Confirm booking (Cash Payment)?")) processBooking("Offline (After Trip)", "Pending"); }
+        // --- UPDATED OFFLINE PAYMENT LOGIC (WITH NEW MODAL) ---
+        function handleOffline() { 
+            closeModal('payModal');
+            openModal('offlineConfirmModal'); 
+        }
+
+        function confirmOfflineBooking() {
+            closeModal('offlineConfirmModal');
+            processBooking("Offline (After Trip)", "Pending");
+        }
+
         function handleOnline() {
             if(RAZORPAY_KEY === "YOUR_RAZORPAY_KEY_ID") { showToast("Online Payment Setup Pending. Use Offline."); return; }
             var options = { "key": RAZORPAY_KEY, "amount": totalPrice * 100, "name": "RK TRAVELS", "description": "Premium Journey", "handler": function (response) { processBooking("Online (Razorpay)", response.razorpay_payment_id); }, "prefill": { "email": bookingDetails.email, "contact": bookingDetails.phone } };
